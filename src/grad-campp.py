@@ -6,44 +6,63 @@ from torchsummary import summary
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
+import torch.nn.functional as F
 
-class Cam(torch.nn.Module):
+class GradCampp(torch.nn.Module):
     def __init__(self, model, image_size):
         super().__init__()
         self.model = model
         self.image_size = image_size
-        self.features = []
-        self.weights = self.model.fc.weight # weigth shape is [classes, features]
+        self.model.layer4.register_backward_hook(self.backward_hook)
+        self.model.layer4.register_forward_hook(self.forward_hook)
 
-        for module_name, module in self.model.named_modules():
-            if isinstance(module, torch.nn.modules.pooling.AdaptiveAvgPool2d):
-                module.register_forward_hook(self.hook)
-            
-    def hook(self, module, input, output):
-        self.features.append(input[0])
+    def backward_hook(self, module, input_grad, output_grad):
+        self.backward_result = torch.squeeze(output_grad[0])
 
-    def forward(self, image):
-        pred = self.model(image)
-        _, target_index = torch.max(pred, 1)
-        target_weight = self.weights[target_index.item()]
+    def forward_hook(self, module, input, output):
+        self.forward_result = torch.squeeze(output)
 
-        # classifier weight * features
-        heatmap = torch.mul(torch.squeeze(self.features[0]), target_weight.view(-1, 1, 1))
-        heatmap = torch.sum(heatmap, axis=0)
-        heatmap = heatmap.detach().cpu().numpy()
+    def forward(self, image, target=None):
+        pred = model(image)
+        if target is None:
+            _, target = torch.max(pred, 1)
+        pred[0][target].backward(retain_graph=True)
+
+        n, c, _ = self.backward_result.shape
+
+        # calculate alpha
+        numerator = self.backward_result.pow(2)
+        denominator = 2 * self.backward_result.pow(2)
+        ag = self.forward_result * self.backward_result.pow(3)
+        denominator += ag.view(n, c, -1).sum(-1, keepdim=True).view(n, c, 1, 1)
+        denominator = torch.where(
+            denominator != 0.0, denominator, torch.ones_like(denominator))
+        alpha = numerator / (denominator + 1e-7)
+
+        relu_grad = F.relu(pred[0, target].exp() * self.backward_result)
+        weights = (alpha * relu_grad).view(n, c, -1).sum(-1).view(n, c, 1, 1)
+
+        heatmap = (weights * self.forward_result).sum(1, keepdim=True)
+
+        # if self.backward_result.ndim != 3:
+            # self.backward_result = self.backward_result.view(-1, 1, 1)
+        # a_k = torch.mean(self.backward_result, dim=(1, 2), keepdim=True)         # [512, 1, 1]
+        # heatmap = torch.sum(a_k * self.forward_result, dim=0).detach().cpu().numpy()                  # [512, 7, 7] * [512, 1, 1]
         heatmap = cv2.resize(heatmap, self.image_size, interpolation=cv2.INTER_CUBIC)
-
+        
         # heatmap normalize [0~1]
         numer = heatmap - np.min(heatmap)
         denom = (heatmap.max() - heatmap.min()) + 1e-4
         heatmap = numer / denom
         heatmap = (heatmap * 255).astype("uint8")
 
+        # out = torch.relu(out) / torch.max(out)  # 음수를 없애고, 0 ~ 1 로 scaling # [7, 7]
+        # out = F.upsample_bilinear(out.unsqueeze(0).unsqueeze(0), image_size)  # 4D로 바꿈
+        # return out.cpu().detach().squeeze().numpy()
         # https://docs.opencv.org/4.x/d3/d50/group__imgproc__colormap.html#gga9a805d8262bcbe273f16be9ea2055a65afdb81862da35ea4912a75f0e8f274aeb
         colormap = cv2.COLORMAP_VIRIDIS
         heatmap = cv2.applyColorMap(heatmap, colormap=colormap)
         return heatmap
-
 
 if __name__ == "__main__":
     if torch.has_mps:
@@ -63,13 +82,15 @@ if __name__ == "__main__":
     image = trainset[100][0][None,...]
     target = trainset[100][1]
 
+
     model = torch.load('./model.pt')
     model_weight = torch.load('./weights_12500.pt')['model_state_dict']
     model.load_state_dict(model_weight)
     model.eval()
 
-    cam = Cam(model=model)
-    heatmap = cam(image).to(device)
+    grad_cam = GradCampp(model=model, image_size=image_size)
+    heatmap = grad_cam(image)
+
 
     vis_image = torch.squeeze(image).permute(1,2,0).numpy()
     vis_image = np.clip(255.0 * (vis_image * std + mean), 0, 255).astype(np.uint8)
