@@ -25,13 +25,16 @@ class ConfusionMatrix:
                 zip(self.classes, np.round(self.cm.diagonal() / self.cm.sum(1), 2))}
 
     def print_calc(self):
-        print("=" * 40)
+        print("=" * 20)       
+        print("Accuracy")
+        print("-" * 20)
+
         for cls, acc in self.get_accuracy_per_cls().items():
             print(self.strFormat % (cls, acc))
-        print("-" * 40)
+        print("-" * 20)
         print(self.strFormat % ("accuracy", self.get_accuracy()))
 
-        print("=" * 40)
+        print("=" * 20)
 
     def clear(self):
         self.__init__(self.classes)

@@ -81,31 +81,35 @@ class GradCampp(torch.nn.Module):
         return heatmaps
 
 # if __name__ == "__main__":
-def grad_campp():
-    if torch.has_mps:
-        device = torch.device("mps")
+def grad_campp(model_path, weight_path, image_size, train_loader, std, mean, device):
+    # if torch.has_mps:
+    #     device = torch.device("mps")
 
-    data_path = "/Users/shinhyeonjun/code/class_activation_map/data/"
-    batch_size = 32
-    image_size = (256, 256)
-    mean=(.5,.5,.5)
-    std=(.5,.5,.5)
-    transforms = Compose([ToTensor(), 
-                          Resize(size=image_size, antialias=False), 
-                          Normalize(mean=mean, std=std)])
+    # data_path = "/Users/shinhyeonjun/code/class_activation_map/data/"
+    # batch_size = 32
+    # image_size = (256, 256)
+    # mean=(.5,.5,.5)
+    # std=(.5,.5,.5)
+    # transforms = Compose([ToTensor(), 
+    #                       Resize(size=image_size, antialias=False), 
+    #                       Normalize(mean=mean, std=std)])
 
-    trainset = CIFAR10(root=data_path, train=True, download=True, transform=transforms, num_batchs=batch_size*2000)
-    trainloader = DataLoader(dataset=trainset, batch_size=4, shuffle=True, num_workers=0, pin_memory=False)
+    # trainset = CIFAR10(root=data_path, train=True, download=True, transform=transforms, num_batchs=batch_size*2000)
+    # trainloader = DataLoader(dataset=trainset, batch_size=4, shuffle=True, num_workers=0, pin_memory=False)
 
-    images, targets = next(iter(trainloader))
+    # images, targets = next(iter(trainloader))
+    images, targets = next(iter(train_loader))
 
     # image = trainset[100][0][None,...]
     # target = trainset[100][1]
     # print()
 
-    model = torch.load('./model.pt')
-    model_weight = torch.load('./weights_12500.pt')['model_state_dict']
+    # model = torch.load('./model.pt')
+    model = torch.load(model_path)
+    # model_weight = torch.load('./weights_12500.pt')['model_state_dict']
+    model_weight = torch.load(weight_path)['model_state_dict']
     model.load_state_dict(model_weight)
+    model.to(device)
     model.eval()
 
     cam = GradCampp(model=model, image_size=image_size)
@@ -126,5 +130,6 @@ def grad_campp():
     output = cv2.addWeighted(vis_image, alpha, heatmaps, 1 - alpha, 0)
 
     output = np.hstack([vis_image, heatmaps, output])
+    cv2.imwrite("grad-cam++.png", output)
     cv2.imshow("Output", output)
     cv2.waitKey(0)

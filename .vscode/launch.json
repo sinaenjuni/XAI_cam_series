@@ -1,0 +1,25 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "src/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--mode", "grad-cam++",
+                "--model_path", "model.pt",
+                "--weight_path", "weights.pt",
+                "--data_path", "data/",
+                "--batch_size", "3",
+                "--image_size", "256",
+                "--device", "cpu"
+            ]
+        }
+    ]
+}
