@@ -1,4 +1,4 @@
-# Cam serise with Pytorch
+# Cam series with Pytorch
 
 ## Requirements
 
