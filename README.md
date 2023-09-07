@@ -27,6 +27,19 @@ python3 src/main.py \
 
 ## Cam
 
+$$
+\begin{align}
+F_k = \sum_{x,y} f_k (x, y) && \text{GAP of k-th featrue map} \\
+S_c = \sum_{k} w^c_k F_k && \text{input of softmax} \\
+w^c_k && \text{importance of $F_k$ for class c} \\ 
+P_c = \frac{exp(S_c)}{\sum_c{exp(S_c)}} && \text{softmax output of class c} \\
+S_c = \sum_k w^c_k F_k = \sum_k w_k \sum_{x,y} f_k(x,y) = \sum_{x,y} \sum_{k}w^c_kf_k(x,y) \\
+M_c(x,y) = \sum_k{w_c} f_k(x,y) && \text{CAM (Class Activation Map)}
+\end{align}
+$$
+
+![](./doc/cam_paper_img.png)
+
 Example
 
 ```
@@ -42,11 +55,11 @@ python3 src/main.py \
 
 ## Results
 ### CAM
-![](./cam.png)
+![](./doc/cam.png)
 
 ### Grad-CAM
-![](./grad-cam.png)
+![](./doc/grad-cam.png)
 
 ### Grad-CAM++
-![](./grad-cam++.png)
+![](./doc/grad-cam++.png)
 
