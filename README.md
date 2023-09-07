@@ -42,11 +42,11 @@ python3 src/main.py \
 
 ## Results
 ### CAM
-![](cam.png)
+![](./cam.png)
 
 ### Grad-CAM
-![](grad-cam.png)
+![](./grad-cam.png)
 
 ### Grad-CAM++
-![](grad-cam++.png)
+![](./grad-cam++.png)
 
