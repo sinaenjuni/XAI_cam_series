@@ -63,3 +63,9 @@ python3 src/main.py \
 ### Grad-CAM++
 ![](./doc/grad-cam++.png)
 
+# References
+* Smooth Grad-CAM++: An Enhanced Inference Level Visualization Technique for Deep Convolutional Neural Network Models,
+* Daniel Omeiza, Skyler Speakman, Celia Cintas, Komminist Weldermariam [paper]
+* Learning Deep Features for Discriminative Localization, Bolei Zhou, Aditya Khosla, Agata Lapedriza, Aude Oliva, Antonio Torralba [paper]
+* Grad-CAM: Visual explanations from deep networks via gradient-based localization, Ramprasaath R. Selvaraju, Michael Cogswell, Abhishek Das, Ramakrishna Vedantam, Devi Parikh, Dhruv Batra, [arXiv]
+* Grad-CAM++: Improved Visual Explanations for Deep Convolutional Networks, Aditya Chattopadhyay, Anirban Sarkar, Prantik Howlader and Vineeth N Balasubramanian[arXiv]
